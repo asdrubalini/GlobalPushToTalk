@@ -1,3 +1,5 @@
 venv/
 .git/
 .vscode/
+__pycache__/
+nohup.out

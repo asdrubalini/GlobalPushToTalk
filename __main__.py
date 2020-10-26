@@ -5,20 +5,27 @@ from pydub.playback import play
 from time import time
 import subprocess
 
+import threading
+
 
 # Set your push to talk keybindings here
-PUSH_TO_TALK_KEYS = [keyboard.Key.ctrl_r]
+PUSH_TO_TALK_KEYS = [keyboard.Key.pause]
 
-# Load audio and make it -15 dB loader
-activate_sound = AudioSegment.from_mp3("./ptt-activate.mp3") - 15
-deactivate_sound = AudioSegment.from_mp3("./ptt-deactivate.mp3") - 15
+# Load audio and make it loader
+activate_sound = AudioSegment.from_wav("./ptt-activate.wav") - 25
+deactivate_sound = AudioSegment.from_wav("./ptt-deactivate.wav") - 25
+
+# Microphone source id
+source_id = "6"
+
+button_status = False
 
 
 def toggle_ptt(mute: bool) -> bool:
     if mute:
-        command = "pactl set-source-mute 1 1"
+        command = f"pactl set-source-mute {source_id} 1"
     else:
-        command = "pactl set-source-mute 1 0"
+        command = f"pactl set-source-mute {source_id} 0"
 
     p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
     p.wait()
@@ -29,15 +36,23 @@ def toggle_ptt(mute: bool) -> bool:
 
 
 def on_press(key):
-    if key in PUSH_TO_TALK_KEYS:
-        play(activate_sound)
-        
+    global button_status
+
+    if (key in PUSH_TO_TALK_KEYS) and (button_status == False):
+        button_status = True
+        threading.Thread(target=play, args=(activate_sound,),
+                         name="press_sound").start()
+
         toggle_ptt(mute=False)
 
 
 def on_release(key):
-    if key in PUSH_TO_TALK_KEYS:
-        play(deactivate_sound)
+    global button_status
+
+    if (key in PUSH_TO_TALK_KEYS) and (button_status == True):
+        button_status = False
+        threading.Thread(target=play, args=(deactivate_sound,),
+                         name="release_sound").start()
 
         toggle_ptt(mute=True)
 
