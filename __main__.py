@@ -16,7 +16,7 @@ activate_sound = AudioSegment.from_wav("./ptt-activate.wav") - 25
 deactivate_sound = AudioSegment.from_wav("./ptt-deactivate.wav") - 25
 
 # Microphone source id
-source_id = "6"
+source_id = "1"
 
 button_status = False
 
