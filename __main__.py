@@ -4,7 +4,7 @@ from pydub.playback import play
 
 from time import time
 import subprocess
-
+import os
 import threading
 
 
@@ -16,16 +16,32 @@ activate_sound = AudioSegment.from_wav("./ptt-activate.wav") - 25
 deactivate_sound = AudioSegment.from_wav("./ptt-deactivate.wav") - 25
 
 # Microphone source id
-source_id = "1"
+SOURCE_ID = "1"
+
+MUTE_STATUS_PATH = "/tmp/mute-status"
+
 
 button_status = False
 
+if not os.path.exists(MUTE_STATUS_PATH):
+    open(MUTE_STATUS_PATH, "x").close()
+
+
+def write_status_file(mute: bool) -> None:
+    with open(MUTE_STATUS_PATH, "w") as status_file:
+        if mute:
+            status_file.write("A")
+        else:
+            status_file.write("B")
+
 
 def toggle_ptt(mute: bool) -> bool:
+    write_status_file(mute)
+
     if mute:
-        command = f"pactl set-source-mute {source_id} 1"
+        command = f"pactl set-source-mute {SOURCE_ID} 1"
     else:
-        command = f"pactl set-source-mute {source_id} 0"
+        command = f"pactl set-source-mute {SOURCE_ID} 0"
 
     p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
     p.wait()
@@ -40,8 +56,7 @@ def on_press(key):
 
     if (key in PUSH_TO_TALK_KEYS) and (button_status == False):
         button_status = True
-        threading.Thread(target=play, args=(activate_sound,),
-                         name="press_sound").start()
+        # threading.Thread(target=play, args=(activate_sound,), name="press_sound").start()
 
         toggle_ptt(mute=False)
 
@@ -51,8 +66,7 @@ def on_release(key):
 
     if (key in PUSH_TO_TALK_KEYS) and (button_status == True):
         button_status = False
-        threading.Thread(target=play, args=(deactivate_sound,),
-                         name="release_sound").start()
+        # threading.Thread(target=play, args=(deactivate_sound,), name="release_sound").start()
 
         toggle_ptt(mute=True)
 
